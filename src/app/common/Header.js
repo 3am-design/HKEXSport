@@ -1,25 +1,27 @@
 "use client";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useGlobalContext } from "@/app/GlobalContext";
+import { asset } from "@/lib/assets";
 import { navigation, event } from "@/content/event-2026";
-export function Brand() {
+export function Brand({ light = false, className = "brand__logo" }) {
   return (
-    <span className="brand">
-      <span className="brand__word">
-        HKEX
-        <span className="brand__dot" />
-      </span>
-      <span className="brand__caption">
-        Family Sports Day <b>2026</b>
-      </span>
-    </span>
+    <img
+      className={className}
+      src={asset(light ? "/images/hkex-logo-white.svg" : "/images/hkex-logo.svg")}
+      width="192.09"
+      height="87.91"
+      alt="HKEX 香港交易所"
+    />
   );
 }
 export default function Header() {
   const { state, setState } = useGlobalContext();
   const pathname = usePathname();
+  const headerRef = useRef(null);
+  const menuRef = useRef(null);
+  const toggleRef = useRef(null);
   const lang = state.lang;
   const close = () =>
     setState((previous) => ({ ...previous, showMenu: false }));
@@ -27,13 +29,44 @@ export default function Header() {
     setState((previous) => ({ ...previous, showMenu: false }));
   }, [pathname, setState]);
   useEffect(() => {
-    const keydown = (e) => {
-      if (e.key === "Escape")
+    const desktop = window.matchMedia("(min-width: 1101px)");
+    const update = () => {
+      if (!desktop.matches) return;
+      const focusedHref = menuRef.current?.contains(document.activeElement)
+        ? document.activeElement.getAttribute("href") : null;
+      setState((previous) => previous.showMenu ? { ...previous, showMenu: false } : previous);
+      if (focusedHref) {
+        const links = [...headerRef.current.querySelectorAll(".header__nav a")];
+        links.find((link) => link.getAttribute("href") === focusedHref)?.focus();
+      }
+    };
+    desktop.addEventListener("change", update);
+    update();
+    return () => desktop.removeEventListener("change", update);
+  }, [setState]);
+  useEffect(() => {
+    if (!state.showMenu) return undefined;
+    const frame = requestAnimationFrame(() => menuRef.current?.querySelector("a")?.focus());
+    const keydown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
         setState((previous) => ({ ...previous, showMenu: false }));
+        toggleRef.current?.focus();
+      }
+      if (event.key !== "Tab") return;
+      const controls = [...headerRef.current.querySelectorAll("a, button")]
+        .filter((el) => el.getClientRects().length && getComputedStyle(el).visibility !== "hidden");
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault(); last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault(); first?.focus();
+      }
     };
     window.addEventListener("keydown", keydown);
-    return () => window.removeEventListener("keydown", keydown);
-  }, [setState]);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("keydown", keydown); };
+  }, [state.showMenu, setState]);
   const changeLang = () => {
     const next = lang === "en" ? "zh" : "en";
     try {
@@ -42,12 +75,13 @@ export default function Header() {
     setState((previous) => ({ ...previous, lang: next }));
   };
   return (
-    <header className="header">
-      <div className="preview-strip">{event.preview[lang]}</div>
+    <header className="header" ref={headerRef}>
       <div className="container">
         <div className="header__row">
           <Link href="/" className="brand-link" aria-label={event.name[lang]}>
-            <Brand />
+            <span className="header-brand">
+              <Brand className="brand__logo brand__logo--color" />
+            </span>
           </Link>
           <nav
             className="header__nav"
@@ -84,9 +118,10 @@ export default function Header() {
             onClick={changeLang}
             aria-label={lang === "en" ? "切換至繁體中文" : "Switch to English"}
           >
-            {lang === "en" ? "繁" : "EN"}
+            {lang === "en" ? "繁中" : "EN"}
           </button>
           <button
+            ref={toggleRef}
             className="header__nav-toggle"
             aria-label={state.showMenu ? "Close menu" : "Open menu"}
             aria-expanded={state.showMenu}
@@ -106,7 +141,9 @@ export default function Header() {
         </div>
       </div>
       <nav
+        ref={menuRef}
         id="mobile-menu"
+        data-lenis-prevent
         className="menu"
         hidden={!state.showMenu}
         aria-label={lang === "en" ? "Mobile navigation" : "流動版導覽"}

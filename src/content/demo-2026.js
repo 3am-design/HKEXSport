@@ -1,4 +1,4 @@
-import { t } from "./event-2026";
+import { t, photography } from "./event-2026";
 // Display-only fixtures. Never use these values as official participant data.
 export const galleryTags = [
   { id: "all", label: t("All photos", "所有相片") },
@@ -11,45 +11,63 @@ export const galleryPhotos = [
   {
     id: "relay",
     tag: "sport",
-    src: "/images/home/competition.jpg",
+    src: photography.relay,
     caption: t("Together on the track", "一起在跑道上"),
   },
   {
     id: "yoga",
     tag: "wellness",
-    src: "/images/home/workshop.jpg",
+    src: photography.yoga,
     caption: t("Time for family wellbeing", "親子健康時光"),
   },
   {
     id: "care",
     tag: "community",
-    src: "/images/home/community.jpg",
+    src: photography.community,
     caption: t("Connecting our community", "連繫社群"),
   },
   {
     id: "games",
     tag: "carnival",
-    src: "/images/home/games.png",
+    src: photography.games,
     caption: t("A little friendly competition", "輕鬆比拼"),
   },
   {
     id: "refreshment",
     tag: "carnival",
-    src: "/images/home/refreshment.jpg",
+    src: photography.refreshments,
     caption: t("Time to recharge", "補充能量"),
   },
   {
-    id: "taichi",
+    id: "wing-chun",
     tag: "wellness",
-    src: "/images/workshops/Tai-Chi.jpg",
-    caption: t("Moving together", "一起舒展身心"),
+    src: photography.wingChun,
+    caption: t("Learning Wing Chun", "體驗詠春"),
+  },
+  {
+    id: "sprint",
+    tag: "sport",
+    src: photography.sprint,
+    caption: t("Find your pace", "跑出自己的步伐"),
+  },
+  {
+    id: "family-run",
+    tag: "sport",
+    src: photography.family,
+    caption: t("Every generation, together", "一家大小，一起出發"),
+  },
+  {
+    id: "fitness",
+    tag: "wellness",
+    src: photography.fitness,
+    caption: t("Make time for wellbeing", "為健康留一點時間"),
   },
 ];
 export const workshopQueues = [
   {
     id: "a",
-    title: t("Workshop A", "工作坊 A"),
-    session: "14:00–14:30",
+    title: t("Family yoga", "親子瑜伽"),
+    session: "13:45–14:30",
     status: "available",
     serving: "A012",
     waiting: 8,
@@ -57,8 +75,8 @@ export const workshopQueues = [
   },
   {
     id: "b",
-    title: t("Workshop B", "工作坊 B"),
-    session: "14:00–14:45",
+    title: t("Wing Chun", "詠春拳術及木人樁體驗"),
+    session: "14:00–14:20",
     status: "full",
     serving: "B020",
     waiting: 15,
@@ -66,8 +84,8 @@ export const workshopQueues = [
   },
   {
     id: "c",
-    title: t("Workshop C", "工作坊 C"),
-    session: "15:00–15:30",
+    title: t("DIY dumbbells", "啞鈴 DIY"),
+    session: "15:15–15:45",
     status: "upcoming",
     serving: null,
     waiting: 0,
@@ -93,14 +111,14 @@ export const resultEvents = [
               {
                 id: "p1",
                 rank: 1,
-                name: t("Demo athlete A", "示範選手 A"),
+                name: t("101", "101"),
                 mark: "13.20 s",
                 status: "qualified",
               },
               {
                 id: "p2",
                 rank: 2,
-                name: t("Demo athlete B", "示範選手 B"),
+                name: t("102", "102"),
                 mark: "13.55 s",
                 status: "qualified",
               },
@@ -114,21 +132,21 @@ export const resultEvents = [
               {
                 id: "p1",
                 rank: 1,
-                name: t("Demo athlete A", "示範選手 A"),
+                name: t("101", "101"),
                 mark: "12.98 s",
                 points: 10,
               },
               {
                 id: "p2",
                 rank: 2,
-                name: t("Demo athlete B", "示範選手 B"),
+                name: t("102", "102"),
                 mark: "13.40 s",
                 points: 8,
               },
               {
                 id: "p3",
                 rank: null,
-                name: t("Demo athlete C", "示範選手 C"),
+                name: t("103", "103"),
                 mark: "—",
                 status: "dns",
               },
@@ -166,7 +184,7 @@ export const resultEvents = [
               {
                 id: "p4",
                 rank: 1,
-                name: t("Demo athlete D", "示範選手 D"),
+                name: t("104", "104"),
                 mark: "4.82 m",
                 attempts: ["4.60", "4.82", "Foul"],
                 points: 10,
@@ -193,10 +211,10 @@ export const resultEvents = [
               {
                 id: "team-a",
                 rank: 1,
-                name: t("Demo team A", "示範隊伍 A"),
-                members: ["A1", "A2", "A3", "A4"],
+                name: t("Team 1", "第 1 隊"),
+                members: ["101", "102", "103", "104"],
                 mark: "58.42 s",
-                points: 20,
+                points: 10,
               },
             ],
           },
@@ -221,8 +239,8 @@ export const resultEvents = [
                 id: "match-1",
                 rank: null,
                 name: t(
-                  "Demo team A vs Demo team B",
-                  "示範隊伍 A 對 示範隊伍 B",
+                  "Team 1 vs Team 2",
+                  "第 1 隊 對 第 2 隊",
                 ),
                 mark: "2–1",
                 status: "finished",

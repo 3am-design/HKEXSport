@@ -1,16 +1,24 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGlobalContext } from "@/app/GlobalContext";
 import InnerHead from "@/app/common/InnerHead";
 import { asset } from "@/lib/assets";
+import { Reveal, usePointerParallax, observeMotion } from "@/components/motion";
 import {
   event,
+  photography,
+  stock,
   highlights,
+  homeMoments,
   schedule,
   competitions,
+  groupScoring,
   workshopOptions,
+  workshopSessionGroups,
+  movementActivities,
   boothOptions,
+  boothHours,
   t,
 } from "@/content/event-2026";
 const useLang = () => useGlobalContext().state.lang;
@@ -22,42 +30,30 @@ export function ArrowLink({ href, children }) {
     </Link>
   );
 }
-export function Notice({ children }) {
-  return (
-    <p className="draft-note">
-      <span aria-hidden="true">●</span>
-      {children}
-    </p>
-  );
-}
 export function Section({ id, title, children }) {
   return (
-    <section id={id} className="content-section container">
+    <Reveal as="section" id={id} className="content-section">
       <h2 className="section-title">{title}</h2>
-      {children}
-    </section>
+      <div className="content-section__body">{children}</div>
+    </Reveal>
   );
 }
 function Cards({ items }) {
   const lang = useLang();
   return (
-    <div className="info-card">
-      <div className="container">
-        <div className="info-card__row">
-          {items.map((item) => (
-            <Link className="info-card__item" key={item.link} href={item.link}>
-              <div className="info-card__item-img media-holder">
-                <img src={asset(item.img)} alt="" loading="lazy" />
-              </div>
-              <h2 className="info-card__item-title">{item.title[lang]}</h2>
-              <p className="info-card__item-desc">{item.description[lang]}</p>
-              <div className="info-card__item-link">
-                <img src={asset("/images/right-arrow.svg")} alt="" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
+    <div className="card-grid container">
+      {items.map((item, i) => (
+        <Reveal as="div" delay={i * 90} key={item.link}>
+          <Link className="card-grid__item" href={item.link}>
+            <span className="card-grid__img">
+              <img src={asset(item.img)} alt="" loading="lazy" />
+            </span>
+            <span className="card-grid__title">{item.title[lang]}</span>
+            <span className="card-grid__desc">{item.description[lang]}</span>
+            <i className="bi bi-arrow-right" aria-hidden="true" />
+          </Link>
+        </Reveal>
+      ))}
     </div>
   );
 }
@@ -84,7 +80,7 @@ function Countdown() {
         ];
   return (
     <div
-      className="demo-countdown"
+      className="event-countdown"
       aria-label={lang === "en" ? "Countdown to the event" : "活動倒數"}
     >
       {values.map((value, i) => (
@@ -102,98 +98,416 @@ function Countdown() {
     </div>
   );
 }
-export function HomePage() {
+const heroPhotos = [
+  { src: stock.kidTrack, position: "34% 50%" },
+  { src: stock.kidShoulders, position: "58% 50%" },
+  { src: stock.kidPlane, position: "42% 50%" },
+  { src: stock.picnic, position: "50% 50%" },
+  { src: stock.swing, position: "42% 50%" },
+  { src: stock.kidRedCap, position: "35% 50%" },
+];
+// How far (px at the section edge) each photo travels with the pointer; negative moves against it.
+const heroDepths = [7, -5, 10, -8, 6, -6];
+const statementDepths = [6, -5, 8, -6];
+// Fades in only once the image has decoded, so nothing pops in half-way through the entrance animation.
+function HeroPhoto({ src, position, priority }) {
+  const ref = useRef(null);
+  const [status, setStatus] = useState("static");
+  useEffect(() => {
+    const img = ref.current;
+    if (!img) return undefined;
+    let mounted = true;
+    if (!img.complete) setStatus("loading");
+    img.decode().catch(() => {}).then(() => { if (mounted) setStatus("ready"); });
+    return () => { mounted = false; };
+  }, []);
+  return (
+    <span className={`home-hero__enter is-${status}`}>
+      <img
+        ref={ref}
+        src={asset(src)}
+        alt=""
+        width="509"
+        height="339"
+        style={{ objectPosition: position }}
+        fetchPriority={priority ? "high" : undefined}
+        loading={priority ? undefined : "lazy"}
+      />
+    </span>
+  );
+}
+function HomeHero() {
+  const lang = useLang();
+  const photosRef = useRef(null);
+  usePointerParallax(photosRef);
+  return (
+    <section className="home-hero" aria-labelledby="event-title">
+      <div className="home-hero__photos" ref={photosRef} aria-hidden="true">
+        {heroPhotos.map((photo, i) => (
+          <span
+            key={photo.src}
+            className={`home-hero__photo home-hero__photo--${i + 1}`}
+            data-depth={heroDepths[i]}
+          >
+            <HeroPhoto src={photo.src} position={photo.position} priority={i < 3} />
+          </span>
+        ))}
+      </div>
+      <div className="home-hero__inner container">
+        <h1 id="event-title">
+          <span className="home-hero__name">
+            {lang === "en" ? (
+              <>
+                <span>Family</span> <span>Sports Day</span>
+              </>
+            ) : (
+              <span>家庭運動日</span>
+            )}
+          </span>
+          <span className="home-hero__year">2026</span>
+        </h1>
+        <p className="home-hero__details">
+          <time dateTime="2026-12-12">{event.date[lang]}</time>
+          <span aria-hidden="true">/</span>
+          <span>{event.time[lang]}</span>
+          <span aria-hidden="true">/</span>
+          <span>{event.venue[lang]}</span>
+        </p>
+        <ArrowLink href="/event-overview/">
+          {lang === "en" ? "Explore the day" : "探索活動"}
+        </ArrowLink>
+      </div>
+      <a className="home-hero__scroll" href="#about-event">
+        <span>{lang === "en" ? "Discover more" : "了解更多"}</span>
+        <i className="bi bi-arrow-down" aria-hidden="true" />
+      </a>
+    </section>
+  );
+}
+const statementPhotos = [
+  { src: stock.dadShoulders, position: "62% 50%" },
+  { src: stock.toddler, position: "46% 50%" },
+  { src: stock.ballPitGirl, position: "50% 50%" },
+  { src: stock.headphones, position: "55% 50%" },
+];
+function HomeStatement() {
+  const lang = useLang();
+  const photosRef = useRef(null);
+  usePointerParallax(photosRef);
+  const words = lang === "en" ? ["Move.", "Connect.", "Enjoy."] : ["動起來。", "連繫。", "同樂。"];
+  return (
+    <section id="about-event" className="home-statement">
+      <div className="home-statement__photos" ref={photosRef} aria-hidden="true">
+        {statementPhotos.map((photo, i) => (
+          <Reveal
+            as="span"
+            delay={i * 100}
+            key={photo.src}
+            className={`home-float home-float--${i + 1}`}
+          >
+            <span className="home-float__drift" data-depth={statementDepths[i]}>
+              <img
+                src={asset(photo.src)}
+                alt=""
+                width="509"
+                height="339"
+                loading="lazy"
+                style={{ objectPosition: photo.position }}
+              />
+            </span>
+          </Reveal>
+        ))}
+      </div>
+      <div className="container">
+        <Reveal as="p" className="home-statement__eyebrow">
+          {lang === "en" ? "A day for every generation." : "每個世代，一起參與。"}
+        </Reveal>
+        <h2 className="home-statement__words">
+          {words.map((word, i) => (
+            <Reveal as="span" delay={i * 100} key={word}>
+              {word}
+            </Reveal>
+          ))}
+        </h2>
+        <Reveal className="home-statement__row">
+          <div className="home-statement__body">
+            <p className="home-statement__lead">{event.intro[lang]}</p>
+            <p>
+              {lang === "en"
+                ? "An inclusive celebration of wellbeing, family and our community."
+                : "一起投入關顧健康、家庭與社群的共融活動。"}
+            </p>
+            <ArrowLink href="/event-overview/">
+              {lang === "en" ? "About the event" : "認識活動"}
+            </ArrowLink>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+function HomeIndex() {
+  const lang = useLang();
+  const [active, setActive] = useState(0);
+  return (
+    <section className="home-index" aria-labelledby="home-index-title">
+      <div className="container">
+        <Reveal className="home-head">
+          <h2 id="home-index-title">{lang === "en" ? "What’s on" : "精彩活動"}</h2>
+          <i className="bi bi-arrow-down-right" aria-hidden="true" />
+        </Reveal>
+        <div className="home-index__body">
+          <Reveal className="home-index__stage" aria-hidden="true">
+            <div className="home-index__frame">
+            {highlights.map((item, i) => (
+              <img
+                key={item.link}
+                className={i === active ? "is-active" : undefined}
+                src={asset(item.img)}
+                alt=""
+                loading={i === 0 ? "eager" : "lazy"}
+              />
+            ))}
+            </div>
+            <p className="home-index__caption">{highlights[active].description[lang]}</p>
+          </Reveal>
+          <ol className="home-index__list">
+            {highlights.map((item, i) => (
+              <Reveal
+                as="li"
+                delay={i * 70}
+                key={item.link}
+                className={i === active ? "is-active" : undefined}
+              >
+                <Link
+                  className="home-index__link"
+                  href={item.link}
+                  onMouseEnter={() => setActive(i)}
+                  onFocus={() => setActive(i)}
+                >
+                  <span className="home-index__thumb" aria-hidden="true">
+                    <img src={asset(item.img)} alt="" loading="lazy" />
+                  </span>
+                  <span className="home-index__num">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="home-index__text">
+                    <span className="home-index__title">{item.title[lang]}</span>
+                    <span className="home-index__desc">{item.description[lang]}</span>
+                  </span>
+                  <i className="bi bi-arrow-right" aria-hidden="true" />
+                </Link>
+              </Reveal>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
+  );
+}
+// Distance between identical copies of the strip, used to wrap the scroll position seamlessly.
+const setWidth = (el) => el.children[homeMoments.length].offsetLeft - el.children[0].offsetLeft;
+function HomeMoments() {
+  const lang = useLang();
+  const trackRef = useRef(null);
+  // Native swipe/scroll stays available; drift rests offscreen, on hover and on focus.
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return undefined;
+    el.scrollLeft = setWidth(el);
+    let frame = 0;
+    let last = 0;
+    let acc = el.scrollLeft;
+    let active = false;
+    let hovered = false;
+    let focused = false;
+    let dragging = false;
+    const tick = (now) => {
+      const dt = last ? Math.min(now - last, 64) : 0;
+      last = now;
+      const width = setWidth(el);
+      if (width > 0) {
+        acc += dt * 0.025;
+        if (acc > width * 2.5) acc -= width;
+        else if (acc < width * 0.5) acc += width;
+        el.scrollLeft = acc;
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    const update = () => {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      last = 0;
+      acc = el.scrollLeft;
+      if (active && !hovered && !focused && !dragging) frame = requestAnimationFrame(tick);
+    };
+    const enter = () => { hovered = true; update(); };
+    const leave = () => { hovered = false; update(); };
+    const focus = () => { focused = true; update(); };
+    const blur = () => { focused = false; update(); };
+    const down = () => { dragging = true; update(); };
+    const up = () => { dragging = false; update(); };
+    const listeners = [["pointerenter", enter], ["pointerleave", leave], ["focusin", focus], ["focusout", blur], ["pointerdown", down]];
+    listeners.forEach(([event, handler]) => el.addEventListener(event, handler));
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    const stopObserving = observeMotion(el, (enabled) => { active = enabled; update(); });
+    return () => {
+      stopObserving();
+      cancelAnimationFrame(frame);
+      listeners.forEach(([event, handler]) => el.removeEventListener(event, handler));
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+    };
+  }, []);
+  return (
+    <section className="home-moments" aria-labelledby="home-moments-title">
+      <Reveal className="container home-moments__head">
+        <h2 id="home-moments-title">
+          {lang === "en" ? "The day at a glance" : "活動速覽"}
+        </h2>
+        <ArrowLink href="/gallery/">{lang === "en" ? "Photo gallery" : "相片集"}</ArrowLink>
+      </Reveal>
+      <Reveal delay={120} className="home-moments__viewport">
+        <ul className="home-moments__track" ref={trackRef} aria-hidden="true">
+          {[0, 1, 2].flatMap((copy) =>
+            homeMoments.map((moment) => (
+              <li className={`home-moment home-moment--${moment.shape}`} key={`${copy}-${moment.img}`}>
+                <img src={asset(moment.img)} alt="" loading="lazy" />
+              </li>
+            )),
+          )}
+        </ul>
+      </Reveal>
+    </section>
+  );
+}
+function HomeVenue() {
+  const lang = useLang();
+  const facts = [
+    [t("Date", "日期"), event.date],
+    [t("Time", "時間"), event.time],
+    [t("Open to", "對象"), t("HKEX colleagues & families", "同事及家人")],
+  ];
+  return (
+    <section className="home-venue" aria-labelledby="home-venue-title">
+      <div className="container">
+        <div className="home-venue__top">
+          <Reveal className="home-venue__title">
+            <p className="home-venue__eyebrow">{lang === "en" ? "The venue" : "活動場地"}</p>
+            <h2 id="home-venue-title">{event.venue[lang]}</h2>
+          </Reveal>
+          <Reveal className="home-venue__info" delay={120}>
+            <p className="home-venue__lead">
+              {lang === "en"
+                ? "The 2026 event brings track, field and family activities together at Kai Tak Youth Sports Ground."
+                : "2026 家庭運動日將於啟德青年運動場舉行，集合田徑、團體及家庭活動。"}
+            </p>
+            <dl className="home-venue__facts">
+              {facts.map(([label, value]) => (
+                <div key={label.en}>
+                  <dt>{label[lang]}</dt>
+                  <dd>{value[lang]}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="home-venue__links">
+              <ArrowLink href="/event-overview/venue/">
+                {lang === "en" ? "Venue map & getting there" : "場地圖及交通"}
+              </ArrowLink>
+              <ArrowLink href="/event-overview/schedule/">
+                {lang === "en" ? "Schedule & grouping" : "時間表及隊伍"}
+              </ArrowLink>
+            </div>
+          </Reveal>
+        </div>
+        <Reveal as="figure" className="home-venue__photo">
+          <img
+            src={asset(photography.venue)}
+            alt={
+              lang === "en"
+                ? "The main stand, running track and pitch at Kai Tak Youth Sports Ground"
+                : "啟德青年運動場的看台、跑道及草地"
+            }
+            width="1920"
+            height="1080"
+            loading="lazy"
+          />
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+function HomeClosing() {
   const lang = useLang();
   return (
-    <>
-      <section className="demo-hero">
-        <div className="demo-hero__copy">
-          <p className="eyebrow">
-            {lang === "en"
-              ? "Together, for the joy of it."
-              : "一起運動，共享歡樂。"}
-          </p>
-          <h1>
-            <span>HKEX</span>
-            <span>{lang === "en" ? "Family" : "家庭"}</span>
-            <span>{lang === "en" ? "Sports Day" : "運動日"}</span>
-            <em>2026</em>
-          </h1>
-          <div className="demo-hero__details">
-            <p>{event.date[lang]}</p>
-            <p>
-              {event.time[lang]}
-              <br />
-              {event.venue[lang]}
-            </p>
-          </div>
+    <section className="home-cta" aria-labelledby="home-cta-title">
+      <div className="home-cta__inner container">
+        <Reveal as="h2" id="home-cta-title">
+          {lang === "en" ? "See you on 12\u00a0December." : "12 月 12 日，運動場見！"}
+        </Reveal>
+        <Reveal className="home-cta__row" delay={140}>
+          <Countdown />
           <ArrowLink href="/event-overview/">
             {lang === "en" ? "Explore the day" : "探索活動"}
           </ArrowLink>
-        </div>
-        <div className="demo-hero__visual">
-          <img
-            src={asset("/images/kv-ver.png")}
-            alt={
-              lang === "en"
-                ? "Demo illustration of families and athletes on a running track"
-                : "家庭及運動員在跑道上的示意插畫"
-            }
-            fetchPriority="high"
-          />
-          <span className="demo-art-label">
-            {lang === "en"
-              ? "DEMO ARTWORK · 2026 KV TO FOLLOW"
-              : "示意圖片 · 2026 主視覺待定"}
-          </span>
-          <Countdown />
-        </div>
-      </section>
-      <section className="landing-about">
-        <div className="container">
-          <p className="landing-about__heading landing-about__heading--1">
-            {lang === "en"
-              ? "A day for every generation."
-              : "每個世代，一起參與。"}
-          </p>
-          <div className="landing-about__row">
-            <div className="landing-about__main">
-              <h2 className="landing-about__heading landing-about__heading--2">
-                <span>{lang === "en" ? "Move." : "動起來。"}</span>
-                <span>{lang === "en" ? "Connect." : "連繫。"}</span>
-                <span>{lang === "en" ? "Enjoy." : "同樂。"}</span>
-              </h2>
-            </div>
-            <div className="landing-about__body">
-              <div className="static">
-                <p>{event.intro[lang]}</p>
-              </div>
-              <p className="intro-support">
-                {lang === "en"
-                  ? "An inclusive celebration of wellbeing, family and our community."
-                  : "一起投入關顧健康、家庭與社群的共融活動。"}
-              </p>
-              <ArrowLink href="/event-overview/">
-                {lang === "en" ? "About the event" : "認識活動"}
-              </ArrowLink>
-            </div>
-          </div>
-        </div>
-      </section>
-      <div className="section-ribbon" aria-hidden="true">
-        {lang === "en" ? "What’s on…" : "精彩活動…"}
+        </Reveal>
       </div>
-      <Cards items={highlights} />
+    </section>
+  );
+}
+export function HomePage() {
+  return (
+    <>
+      <HomeHero />
+      <HomeStatement />
+      <HomeIndex />
+      <HomeMoments />
+      <HomeVenue />
+      <HomeClosing />
     </>
   );
 }
+const headPhotos = {
+  overview: [
+    { src: stock.kidShoulders, position: "58% 50%" },
+    { src: stock.picnic, ratio: "4 / 3" },
+  ],
+  schedule: [
+    { src: stock.kidRedCap, position: "30% 50%" },
+    { src: stock.swing, position: "45% 50%", ratio: "4 / 3" },
+  ],
+  venue: [{ src: photography.venue, position: "30% 60%", ratio: "3 / 2" }],
+  competitions: [
+    { src: stock.runner, position: "62% 50%" },
+    { src: stock.kidTrack, position: "35% 50%", ratio: "4 / 3" },
+  ],
+  activities: [
+    { src: stock.kidPlane, position: "42% 50%" },
+    { src: stock.picnic, position: "50% 50%", ratio: "4 / 3" },
+  ],
+  workshops: [
+    { src: stock.stretch, position: "42% 50%" },
+    { src: stock.watchApp, position: "60% 50%", ratio: "4 / 3" },
+  ],
+  booths: [
+    { src: stock.ringToss, position: "50% 50%" },
+    { src: stock.kidPlane, position: "42% 50%", ratio: "4 / 3" },
+  ],
+  community: [
+    { src: stock.generations, position: "60% 50%" },
+    { src: stock.forestHug, position: "50% 50%", ratio: "4 / 3" },
+  ],
+  fitness: [
+    { src: stock.plank, position: "50% 50%" },
+    { src: stock.watchApp, position: "60% 50%", ratio: "4 / 3" },
+  ],
+};
 export function OverviewPage() {
   const lang = useLang();
   return (
     <>
       <InnerHead
         title={lang === "en" ? "About the Event" : "活動介紹"}
-        withLine
+        photos={headPhotos.overview}
       />
       <Section title={event.name[lang]}>
         <p className="lead-copy">{event.intro[lang]}</p>
@@ -211,7 +525,7 @@ export function OverviewPage() {
         </dl>
         <p>
           {lang === "en"
-            ? "Hosted by Hong Kong Exchanges and Clearing Limited, the day brings colleagues and their families together through sport, wellbeing and community. Activities are being planned for different generations, with a focus on inclusion and caregiver appreciation."
+            ? "Hosted by Hong Kong Exchanges and Clearing Limited, the day brings colleagues and their families together through sport, wellbeing and community. Activities bring together different generations, with a focus on inclusion and caregiver appreciation."
             : "香港交易及結算所有限公司透過運動、健康體驗及社區活動，連繫同事與家人。活動照顧不同世代的參與需要，重視共融，亦向照顧者表達謝意。"}
         </p>
         <div className="holding-action">
@@ -230,14 +544,9 @@ export function SchedulePage() {
     <>
       <InnerHead
         title={lang === "en" ? "Schedule & Grouping" : "時間表及隊伍"}
-        withLine
+        photos={headPhotos.schedule}
       />
       <Section title={event.date[lang]}>
-        <Notice>
-          {lang === "en"
-            ? "Tentative programme. Detailed activity and closing-ceremony timings are being confirmed."
-            : "活動流程暫定，各項活動及閉幕典禮時間有待確認。"}
-        </Notice>
         <div className="schedule-list">
           {schedule.map((row) => (
             <div className="schedule-row" key={row.title.en}>
@@ -255,8 +564,8 @@ export function SchedulePage() {
       <Section title={lang === "en" ? "Grouping" : "隊伍安排"}>
         <p>
           {lang === "en"
-            ? "Team allocation and participant information will be announced once confirmed."
-            : "隊伍分配及參加者資訊將於確認後公布。"}
+            ? "Check your team allocation in your event information and find your group’s seating area on the venue map."
+            : "請查看活動資訊中的隊伍分配，並參照場地圖前往所屬隊伍的座位區。"}
         </p>
       </Section>
     </>
@@ -268,30 +577,41 @@ export function VenuePage() {
     <>
       <InnerHead
         title={lang === "en" ? "About the Venue" : "活動場地"}
-        withLine
+        photos={headPhotos.venue}
       />
+      <div className="venue-map container">
+        <a
+          href={asset(`/images/about/Event-Map${lang === "en" ? "" : "-tc"}.jpg`)}
+          target="_blank"
+          rel="noreferrer noopener"
+          aria-label={lang === "en" ? "Open full-size venue map" : "開啟完整場地圖"}
+        >
+          <img
+            src={asset(`/images/about/Event-Map${lang === "en" ? "" : "-tc"}.jpg`)}
+            alt={lang === "en" ? "Sports ground and indoor area: activity zones, facilities and group seating" : "運動場及室內區域：活動區、設施及隊伍座位分布"}
+            fetchPriority="high"
+          />
+        </a>
+      </div>
       <Section title={event.venue[lang]}>
         <p className="lead-copy">
           {lang === "en"
             ? "The 2026 event brings track, field and family activities together at Kai Tak Youth Sports Ground."
             : "2026 家庭運動日將於啟德青年運動場舉行，集合田徑、團體及家庭活動。"}
         </p>
-        <div className="venue-placeholder">
-          <i className="bi bi-geo-alt" aria-hidden="true" />
-          <h3>{lang === "en" ? "2026 venue map" : "2026 活動場地圖"}</h3>
-          <p>
-            {lang === "en"
-              ? "The event layout and visitor facilities will be published once confirmed."
-              : "活動區域及訪客設施配置將於確認後公布。"}
-          </p>
-        </div>
       </Section>
       <Section title={lang === "en" ? "Getting there" : "交通安排"}>
         <p>
           {lang === "en"
-            ? "Entrance, transport and accessibility information will be added with the approved 2026 venue plan."
-            : "入口、交通及無障礙設施資訊將隨 2026 場地安排一併公布。"}
+            ? "Use the walking route from the Main Stadium car park to Kai Tak Youth Sports Ground to plan your arrival."
+            : "從主場館停車場出發，可參照步行路線前往啟德青年運動場。"}
         </p>
+        <div className="holding-action">
+          <a className="go-btn" href={asset("/pdf/Route-from-Main-Stadium-Carpark-to-YSG.pdf")} target="_blank" rel="noreferrer noopener">
+            <i className="bi bi-arrow-right" aria-hidden="true" />
+            <span>{lang === "en" ? "View walking route (PDF)" : "查看步行路線（PDF）"}</span>
+          </a>
+        </div>
       </Section>
       <Section
         id="refreshments"
@@ -299,80 +619,107 @@ export function VenuePage() {
       >
         <div className="feature-row">
           <img
-            src={asset("/images/home/refreshment.jpg")}
+            src={asset(photography.refreshments)}
             loading="lazy"
             alt={
               lang === "en"
-                ? "Illustrative refreshments photograph"
-                : "小食示意圖片"
+                ? "Refreshments"
+                : "美味小食"
             }
           />
           <div>
             <p>
               {lang === "en"
-                ? "Food kiosks and light refreshments are planned for the afternoon. The menu, serving times and redemption arrangements are to be confirmed."
-                : "活動計劃提供小食攤位及輕食。餐單、供應時間及換領安排有待確認。"}
+                ? "Take a break from the activities and enjoy light refreshments with your family. Find the snack kiosks on the venue map."
+                : "活動之間，不妨與家人一起享用小食，休息充電。小食攤位位置請參照場地圖。"}
             </p>
-            <Notice>
-              {lang === "en"
-                ? "Reference image from the 2025 website."
-                : "沿用 2025 網站圖片作參考。"}
-            </Notice>
           </div>
         </div>
       </Section>
     </>
   );
 }
+function CompetitionDetails({ item, lang }) {
+  const fields = [
+    [t("Category", "組別"), item.category],
+    [t("Location", "場區"), item.location],
+    [t("Format", "賽制"), item.format],
+    [t("Capacity", "名額"), item.capacity],
+    [t("Time", "時間"), item.time],
+  ].filter(([, value]) => value);
+  return (
+    <article className="programme-card">
+      <h3>{item.title[lang]}</h3>
+      <p>{item.description[lang]}</p>
+      <dl className="programme-facts">
+        {fields.map(([label, value]) => (
+          <div key={label.en}>
+            <dt>{label[lang]}</dt>
+            <dd>{typeof value === "string" ? value : value[lang]}</dd>
+          </div>
+        ))}
+      </dl>
+    </article>
+  );
+}
 export function CompetitionsPage() {
   const lang = useLang();
   return (
     <>
-      <InnerHead title={lang === "en" ? "Competitions" : "比賽"} withLine />
-      <div className="container">
-        <Notice>
-          {lang === "en"
-            ? "Proposed 2026 programme. The final list, eligibility, rules and registration are subject to confirmation."
-            : "2026 建議項目。最終項目、參賽資格、規則及報名安排有待確認。"}
-        </Notice>
-        <nav
-          className="section-tabs"
-          aria-label={lang === "en" ? "Competition categories" : "比賽類別"}
-        >
-          {competitions.map((group) => (
-            <a key={group.id} href={`#${group.id}`}>
-              {group.title[lang]}
-            </a>
-          ))}
-          <a href="#result">{lang === "en" ? "Results" : "比賽結果"}</a>
-        </nav>
-      </div>
+      <InnerHead title={lang === "en" ? "Competitions" : "比賽"} photos={headPhotos.competitions} />
+      <nav className="section-tabs container" aria-label={lang === "en" ? "Competition categories" : "比賽類別"}>
+        {competitions.map((group) => (
+          <a key={group.id} href={`#${group.id}`}>{group.title[lang]}</a>
+        ))}
+        <a href="#group-score">{groupScoring.title[lang]}</a>
+        <a href="#result">{lang === "en" ? "Results" : "比賽結果"}</a>
+      </nav>
       {competitions.map((group) => (
         <Section key={group.id} id={group.id} title={group.title[lang]}>
-          <div className="feature-row">
+          <div className="programme-intro">
             <img src={asset(group.image)} alt="" loading="lazy" />
-            <ul className="programme-list">
-              {group.items.map((item) => (
-                <li key={item.en}>
-                  {item[lang]}
-                  <span>
-                    {lang === "en" ? "Details to follow" : "詳情稍後公布"}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <p className="lead-copy">{group.description[lang]}</p>
+          </div>
+          <div className="competition-grid">
+            {group.items.map((item) => (
+              <CompetitionDetails key={item.id} item={item} lang={lang} />
+            ))}
           </div>
         </Section>
       ))}
+      <Section id="group-score" title={groupScoring.title[lang]}>
+        <div className="group-score-layout">
+          <div className="group-score-copy">
+            <p className="lead-copy">{groupScoring.description[lang]}</p>
+            <p>{groupScoring.participation[lang]}</p>
+          </div>
+          <table className="group-score-table" aria-label={groupScoring.title[lang]}>
+            <thead>
+              <tr>
+                <th scope="col">{lang === "en" ? "Competition position" : "比賽名次"}</th>
+                <th scope="col">{lang === "en" ? "Points awarded" : "得分"}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {groupScoring.positions.map((row) => (
+                <tr key={row.points}>
+                  <th scope="row">{row.rank[lang]}</th>
+                  <td>{row.points}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Section>
       <Section id="result" title={lang === "en" ? "Results" : "比賽結果"}>
         <p>
           {lang === "en"
-            ? "Results will be organised by competition, category and round. Official results will be published after verification."
-            : "比賽結果將按項目、組別及賽段整理，並於核實後公布。"}
+            ? "Find race times, distances, match scores and rankings by competition, category and round."
+            : "按比賽項目、組別及賽段，查閱時間、距離、比數及排名。"}
         </p>
         <div className="holding-action">
           <ArrowLink href="/competitions/results/">
-            {lang === "en" ? "View results layout" : "查看賽果版面"}
+            {lang === "en" ? "View results" : "查看賽果"}
           </ArrowLink>
         </div>
       </Section>
@@ -385,7 +732,7 @@ export function ActivitiesPage() {
     <>
       <InnerHead
         title={lang === "en" ? "Activities & Wellness" : "活動及健康體驗"}
-        withLine
+        photos={headPhotos.activities}
       />
       <Cards
         items={highlights.filter((item) => item.link.startsWith("/workshops"))}
@@ -397,53 +744,79 @@ export function WorkshopsPage() {
   const lang = useLang();
   return (
     <>
-      <InnerHead
-        title={lang === "en" ? "Wellness Workshops" : "健康工作坊"}
-        withLine
-      />
-      <Section
-        title={
-          lang === "en"
-            ? "Time to move. Time together."
-            : "一起活動，共享親子時光。"
-        }
-      >
+      <InnerHead title={lang === "en" ? "Wellness Workshops" : "健康工作坊"} photos={headPhotos.workshops} />
+      <Section title={lang === "en" ? "Time to move. Time together." : "一起活動，共享親子時光。"}>
         <div className="feature-row">
           <img
-            src={asset("/images/workshops/Parenting-Yoga.jpg")}
+            src={asset(photography.yoga)}
             loading="lazy"
-            alt={
-              lang === "en" ? "Family yoga reference image" : "親子瑜伽參考圖片"
-            }
+            alt={lang === "en" ? "Family yoga" : "親子瑜伽"}
           />
           <div>
-            <p>
+            <p className="lead-copy">
               {lang === "en"
-                ? "A selection of shared experiences for wellbeing and family connection. The following activities are under consideration; the final three-workshop programme is still to be confirmed."
-                : "透過共同體驗，關顧身心健康，增進家人連繫。以下為考慮中的活動選項，最終三項工作坊有待確認。"}
+                ? "From martial arts and strength training to creative making and family wellbeing, discover a new way to spend time together."
+                : "由武術、肌力訓練，到創意手作及親子健康體驗，一起發掘相處的新方式。"}
             </p>
-            <Notice>
-              {lang === "en"
-                ? "Proposed options, not confirmed sessions."
-                : "以下為建議選項，並非已確認場次。"}
-            </Notice>
+            <div className="holding-action">
+              <a href="#workshop-sessions" className="go-btn">
+                <i className="bi bi-arrow-right" aria-hidden="true" />
+                <span>{lang === "en" ? "Explore workshop sessions" : "查看工作坊場次"}</span>
+              </a>
+            </div>
           </div>
         </div>
-        <ul className="option-grid">
+        <div className="workshop-grid">
           {workshopOptions.map((item) => (
-            <li key={item.en}>{item[lang]}</li>
+            <article className="programme-card workshop-card" key={item.id}>
+              <p className="programme-category">{item.focus[lang]}</p>
+              <h3>{item.title[lang]}</h3>
+              <p>{item.description[lang]}</p>
+              <p className="activity-duration">
+                <i className="bi bi-clock" aria-hidden="true" />
+                {lang === "en" ? `${item.duration} minutes` : `${item.duration} 分鐘`}
+              </p>
+            </article>
+          ))}
+        </div>
+      </Section>
+      <Section title={lang === "en" ? "Move at your own pace." : "找到自己的步伐。"}>
+        <p className="lead-copy">
+          {lang === "en"
+            ? "Add a change of pace to your afternoon with super slow jogging or Nordic walking."
+            : "透過原地超慢跑或北歐健步行，為下午活動帶來不一樣的節奏。"}
+        </p>
+        <ul className="movement-list">
+          {movementActivities.map((item) => (
+            <li key={item.title.en}>
+              <h3>{item.title[lang]}</h3>
+              <span>{lang === "en" ? `${item.duration} minutes` : `${item.duration} 分鐘`}</span>
+            </li>
           ))}
         </ul>
-        <p>
-          {lang === "en"
-            ? "Slow jogging or Nordic walking is also being considered. Instructors, session times, age guidance and ticket arrangements will follow."
-            : "另正考慮安排原地超慢跑或北歐健步行。導師、場次、適用年齡及攞籌安排將稍後公布。"}
-        </p>
+      </Section>
+      <Section id="workshop-sessions" title={lang === "en" ? "Workshop Sessions" : "工作坊場次"}>
+        <div className="workshop-session-list">
+          {workshopSessionGroups.map((group) => (
+            <div className="workshop-session-row" key={group.id}>
+              <div>
+                <h3>{group.title[lang]}</h3>
+                {group.activities && <p>{group.activities[lang]}</p>}
+              </div>
+              <ol className="session-times" aria-label={group.title[lang]}>
+                {group.sessions.map((time, i) => (
+                  <li key={time}>
+                    <span>{lang === "en" ? `Session ${i + 1}` : `場次 ${i + 1}`}</span>
+                    <strong>{time}</strong>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </div>
         <div className="holding-action">
           <ArrowLink href="/workshop-status/">
-            {lang === "en"
-              ? "Workshop queue & tickets"
-              : "工作坊排隊及攞籌狀態"}
+            {lang === "en" ? "Workshop queue & tickets" : "工作坊排隊及攞籌狀態"}
           </ArrowLink>
         </div>
       </Section>
@@ -456,8 +829,12 @@ export function BoothsPage() {
     <>
       <InnerHead
         title={lang === "en" ? "Activity Booths" : "活動攤位"}
-        withLine
+        photos={headPhotos.booths}
       />
+      <div className="programme-hours container">
+        <span>{lang === "en" ? "Opening hours" : "開放時間"}</span>
+        <strong>{boothHours}</strong>
+      </div>
       <Section
         title={
           lang === "en"
@@ -466,18 +843,13 @@ export function BoothsPage() {
         }
       >
         <div className="feature-row">
-          <img src={asset("/images/home/games.png")} alt="" loading="lazy" />
+          <img src={asset(photography.games)} alt="" loading="lazy" />
           <div>
             <p>
               {lang === "en"
-                ? "Enjoy a sports carnival with activities for different ages and abilities. The proposed line-up includes the following games."
-                : "運動嘉年華帶來適合不同年齡及能力的遊戲體驗。建議項目包括以下活動。"}
+                ? "Enjoy a sports carnival with activities for different ages and abilities. Explore the games below."
+                : "運動嘉年華帶來適合不同年齡及能力的遊戲體驗。一起探索以下遊戲。"}
             </p>
-            <Notice>
-              {lang === "en"
-                ? "Booth line-up, opening times and participation details are provisional."
-                : "攤位項目、開放時間及參加安排暫定。"}
-            </Notice>
           </div>
         </div>
         <ul className="option-grid">
@@ -495,7 +867,7 @@ export function CommunityPage() {
     <>
       <InnerHead
         title={lang === "en" ? "Community Engagement" : "社區關懷"}
-        withLine
+        photos={headPhotos.community}
       />
       <Section
         title={
@@ -506,21 +878,16 @@ export function CommunityPage() {
       >
         <div className="feature-row">
           <img
-            src={asset("/images/home/community.jpg")}
+            src={asset(photography.community)}
             alt=""
             loading="lazy"
           />
           <div>
             <p>
               {lang === "en"
-                ? "This year's event places an emphasis on caregiver appreciation and bringing people together across generations. Community and NGO engagement activities are being developed."
-                : "今年活動著重向照顧者表達謝意，並促進不同世代之間的交流。社區及非政府機構參與活動正在籌備中。"}
+                ? "This year's event places an emphasis on caregiver appreciation and bringing people together across generations. Share a moment of appreciation and connect with the people who care for our community."
+                : "今年活動著重向照顧者表達謝意，並促進不同世代之間的交流。透過共同參與，向身邊的照顧者表達心意，連繫社群。"}
             </p>
-            <Notice>
-              {lang === "en"
-                ? "Partners and activity details will be announced once confirmed. Images are for reference."
-                : "合作機構及活動詳情將於確認後公布。圖片只供參考。"}
-            </Notice>
           </div>
         </div>
       </Section>
@@ -533,29 +900,38 @@ export function FitnessPage() {
     <>
       <InnerHead
         title={lang === "en" ? "Fitness Assessment" : "體適能評估"}
-        withLine
+        photos={headPhotos.fitness}
       />
       <Section
         title={
           lang === "en" ? "Make time for your wellbeing." : "為健康留一點時間。"
         }
       >
-        <p className="lead-copy">
-          {lang === "en"
-            ? "A dedicated fitness assessment zone is planned as part of the 2026 wellness programme."
-            : "2026 健康活動計劃設有專屬體適能評估區。"}
-        </p>
-        <div className="venue-placeholder">
+        <div className="feature-row">
+          <img
+            src={asset(photography.fitness)}
+            width="509"
+            height="339"
+            loading="lazy"
+            alt={lang === "en" ? "Checking a smartwatch during a plank exercise" : "平板支撐時查看智能手錶"}
+          />
+          <p className="lead-copy">
+            {lang === "en"
+              ? "Visit the fitness assessment zone to get to know your fitness and wellbeing."
+              : "到訪體適能評估區，了解自己的體適能狀況，關顧身心健康。"}
+          </p>
+        </div>
+        <div className="wellness-panel">
           <i className="bi bi-heart-pulse" aria-hidden="true" />
           <h3>
             {lang === "en"
-              ? "Assessment details to follow"
-              : "評估詳情稍後公布"}
+              ? "Get to know your fitness"
+              : "了解自己的體適能"}
           </h3>
           <p>
             {lang === "en"
-              ? "Assessment items, facilitators, age guidance and participation arrangements are being confirmed."
-              : "評估項目、負責人員、適用年齡及參加安排正在確認中。"}
+              ? "Speak with the team at the assessment zone about the activities and how to take part."
+              : "歡迎向評估區的工作人員了解活動內容及參加方式。"}
           </p>
         </div>
       </Section>
@@ -569,22 +945,14 @@ export function HoldingPage({ type }) {
       title: t("Adverse Weather", "惡劣天氣"),
       heading: t("Weather arrangements", "天氣安排"),
       body: t(
-        "The 2026 adverse-weather and event-update arrangements will be published once approved. Please refer to the organiser's confirmed communications for the final event arrangements.",
-        "2026 惡劣天氣及活動更新安排將於審批後公布。活動最終安排請以主辦機構確認的通知為準。",
-      ),
-    },
-    terms: {
-      title: t("Website Information", "網站資訊"),
-      heading: t("About this preview", "關於此預覽"),
-      body: t(
-        "This is a working preview for HKEX Family Sports Day 2026. Programme details, translations and artwork are provisional. This preview does not collect registrations or participant information. Approved event terms, privacy information and contact details will be added before launch.",
-        "此網站為香港交易所家庭運動日 2026 的工作預覽。活動詳情、翻譯及圖片均屬暫定。此預覽不收集報名或參加者資料。經確認的活動條款、私隱資訊及聯絡方式將於正式推出前加入。",
+        "Please check the organiser’s event communications for weather updates and any changes to the day’s arrangements.",
+        "請留意主辦機構發出的天氣消息及活動通知，以了解當日安排的最新消息。",
       ),
     },
   }[type];
   return (
     <>
-      <InnerHead title={content.title[lang]} withLine />
+      <InnerHead title={content.title[lang]} />
       <Section title={content.heading[lang]}>
         <p className="lead-copy">{content.body[lang]}</p>
         <div className="holding-action">

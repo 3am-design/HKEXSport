@@ -2,7 +2,7 @@
 import { useRef, useState } from "react";
 import { useGlobalContext } from "@/app/GlobalContext";
 import InnerHead from "@/app/common/InnerHead";
-import { Notice, Section } from "./EventPages";
+import { Section } from "./EventPages";
 import { asset } from "@/lib/assets";
 import {
   galleryTags,
@@ -25,13 +25,8 @@ export function GalleryPage() {
   };
   return (
     <>
-      <InnerHead title={lang === "en" ? "Photo Gallery" : "相片集"} withLine />
+      <InnerHead title={lang === "en" ? "Photo Gallery" : "相片集"} />
       <Section title={lang === "en" ? "Shared moments." : "一起留下精彩瞬間。"}>
-        <Notice>
-          {lang === "en"
-            ? "Demo gallery using reference images from the 2025 website. These are not photos of the 2026 event."
-            : "示範相片集沿用 2025 網站參考圖片，並非 2026 活動相片。"}
-        </Notice>
         <div
           className="filter-tags"
           role="group"
@@ -51,8 +46,8 @@ export function GalleryPage() {
         </div>
         <p className="result-count" aria-live="polite">
           {lang === "en"
-            ? `${photos.length} reference photos`
-            : `${photos.length} 張參考圖片`}
+            ? `${photos.length} photos`
+            : `${photos.length} 張相片`}
         </p>
         <div className="gallery-grid">
           {photos.map((photo) => (
@@ -76,7 +71,7 @@ export function GalleryPage() {
         <dialog
           ref={dialog}
           className="photo-dialog"
-          aria-label={lang === "en" ? "Photo preview" : "相片預覽"}
+          aria-label={lang === "en" ? "Photo" : "相片"}
           onClick={(e) => {
             if (e.target === dialog.current) dialog.current.close();
           }}
@@ -101,7 +96,6 @@ export function GalleryPage() {
 }
 export function WorkshopStatusPage() {
   const lang = useLang();
-  const [filter, setFilter] = useState("all");
   const labels = {
     available: lang === "en" ? "Tickets available" : "尚有籌號",
     full: lang === "en" ? "Fully allocated" : "籌號已派完",
@@ -111,7 +105,6 @@ export function WorkshopStatusPage() {
     <>
       <InnerHead
         title={lang === "en" ? "Workshop Status" : "工作坊狀態"}
-        withLine
       />
       <Section
         title={
@@ -120,27 +113,8 @@ export function WorkshopStatusPage() {
             : "排隊及攞籌狀態，一目了然。"
         }
       >
-        <Notice>
-          {lang === "en"
-            ? "Demo status only. Workshop names, sessions and queue numbers below are examples. No tickets are issued by this preview."
-            : "僅供示範。以下工作坊名稱、場次及籌號均為例子；此預覽不會派發籌號。"}
-        </Notice>
-        <label className="select-field">
-          {lang === "en" ? "Show workshop" : "選擇工作坊"}
-          <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="all">
-              {lang === "en" ? "All workshops" : "全部工作坊"}
-            </option>
-            {workshopQueues.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.title[lang]}
-              </option>
-            ))}
-          </select>
-        </label>
         <div className="queue-grid" aria-live="polite">
           {workshopQueues
-            .filter((item) => filter === "all" || item.id === filter)
             .map((item) => (
               <article className="queue-card" key={item.id}>
                 <span className={`status-pill status-pill--${item.status}`}>
@@ -148,7 +122,7 @@ export function WorkshopStatusPage() {
                 </span>
                 <h3>{item.title[lang]}</h3>
                 <p>
-                  {lang === "en" ? "Example session" : "示範場次"}{" "}
+                  {lang === "en" ? "Session" : "場次"}{" "}
                   {item.session}
                 </p>
                 <div className="serving-number">
@@ -170,8 +144,8 @@ export function WorkshopStatusPage() {
         </div>
         <p className="status-footnote">
           {lang === "en"
-            ? "In the final site, venue staff will update session availability and the number being called. Ticket collection arrangements are still to be confirmed."
-            : "正式網站將由現場工作人員更新場次名額及叫號。攞籌方式仍有待確認。"}
+            ? "Please follow the instructions from venue staff when your number is called."
+            : "叫號後，請按照現場工作人員的指示參與活動。"}
         </p>
       </Section>
     </>
@@ -202,18 +176,12 @@ export function ResultsPage() {
     <>
       <InnerHead
         title={lang === "en" ? "Competition Results" : "比賽結果"}
-        withLine
       />
       <Section
         title={
           lang === "en" ? "Every round. Every result." : "每個賽段，每項成績。"
         }
       >
-        <Notice>
-          {lang === "en"
-            ? "Sample data to demonstrate the results layout. Names, marks and points below are fictional. Official 2026 results are not available yet."
-            : "以下為版面示範資料，選手、成績及分數均屬虛構。2026 正式賽果尚未公布。"}
-        </Notice>
         <div className="results-filters">
           <label className="select-field">
             {lang === "en" ? "Competition" : "比賽項目"}
@@ -274,13 +242,12 @@ export function ResultsPage() {
             {competition.title[lang]} · {category.title[lang]} ·{" "}
             {round.title[lang]}
           </h3>
-          <span>{lang === "en" ? "DEMO" : "示範"}</span>
         </div>
         {round.entries.length ? (
           <div
             className="results-scroll"
             role="region"
-            aria-label={lang === "en" ? "Sample results table" : "示範賽果表格"}
+            aria-label={lang === "en" ? "Results table" : "賽果表格"}
             tabIndex={0}
           >
             <table className="results-table">
@@ -288,7 +255,7 @@ export function ResultsPage() {
                 <tr>
                   <th scope="col">{lang === "en" ? "Rank" : "名次"}</th>
                   <th scope="col">
-                    {lang === "en" ? "Participant / team" : "參加者／隊伍"}
+                    {lang === "en" ? "Bib number / team" : "號碼布／隊伍"}
                   </th>
                   <th scope="col">{round.metric[lang]}</th>
                   <th scope="col">{lang === "en" ? "Points" : "積分"}</th>
