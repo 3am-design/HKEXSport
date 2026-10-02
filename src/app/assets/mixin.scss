@@ -1,0 +1,108 @@
+$font-initial-size: 16;
+
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+
+// Import Bootstrap's breakpoint mixins
+@import "~bootstrap/scss/mixins/breakpoints";
+
+@font-face {
+  font-family: "FSElliotPro";
+  src: url("./FSElliotPro.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "FSElliotPro";
+  src: url("./FSElliotPro-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "FSElliotPro";
+  src: url("./FSElliotPro-Thin.woff") format("woff");
+  font-weight: 100;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "FSElliotPro";
+  src: url("./FSElliotPro-Heavy.woff") format("woff");
+  font-weight: 900;
+  font-style: normal;
+}
+
+@function pxem($pxes, $context: $font-initial-size, $force: false) {
+  $length: length($pxes);
+  $imp: if($force, unquote("!important"), null);
+  $result: ();
+
+  @for $i from 1 through $length {
+    $px: nth($pxes, $i);
+    @if $px == 0 {
+      $result: append($result, 0, space);
+    } @else {
+      $result: append($result, ($px / $context * 1em), space);
+    }
+  }
+
+  @return if($imp != null, $result + " " + $imp, $result);
+}
+@function pxrem($pxes, $context: $font-initial-size, $force: false) {
+  $length: length($pxes);
+  $a1: nth($pxes, 1);
+  $imp: null;
+  @if $force {
+    $imp: unquote("!important");
+  }
+  @if $length == 1 {
+    @return ($a1/$context * 1rem) $imp;
+  } @else if $length == 2 {
+    $a2: nth($pxes, 2);
+    @return ($a1/$context * 1rem) ($a2/$context * 1rem) $imp;
+  } @else if $length == 3 {
+    $a2: nth($pxes, 2);
+    $a3: nth($pxes, 3);
+    @return ($a1/$context * 1rem) ($a2/$context * 1rem) ($a3/$context * 1rem) $imp;
+  } @else if $length == 4 {
+    $a2: nth($pxes, 2);
+    $a3: nth($pxes, 3);
+    $a4: nth($pxes, 4);
+    @return ($a1/$context * 1rem) ($a2/$context * 1rem) ($a3/$context * 1rem) ($a4/$context * 1rem) $imp;
+  }
+}
+
+@function pxvw($px, $viewport, $important: false) {
+  @if ($important == true) {
+    @return ($px / $viewport) * 100vw unquote("!important");
+  } @else {
+    @return ($px / $viewport) * 100vw;
+  }
+}
+
+@mixin commonDropShadow() {
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+@mixin fixedMask {
+  clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0);
+  clip: rect(0, auto, auto, 0);
+}
+
+@mixin blkMargin {
+  margin: pxem(88) 0;
+  @include media-breakpoint-down(lg) {
+    margin: pxem(68) 0;
+  }
+  @include media-breakpoint-down(md) {
+    margin: pxem(58) 0;
+  }
+  @include media-breakpoint-down(sm) {
+    margin: pxem(48) 0;
+  }
+}
+
+$mainColor: #13426b;
+$secColor: #f4364c;
