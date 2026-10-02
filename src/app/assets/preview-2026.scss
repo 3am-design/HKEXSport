@@ -1187,7 +1187,7 @@ body.zh .home-venue h2 { letter-spacing: 0.01em; line-height: 1.1; }
 
 .home-cta {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   min-height: clamp(380px, 58svh, 600px);
   color: #fff;
   background: var(--home-red-solid);
