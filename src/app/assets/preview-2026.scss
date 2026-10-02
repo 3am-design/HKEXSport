@@ -1,11 +1,12 @@
 // The 2025 typeface, colour system and staggered content cards remain the base.
 :root {
   --header-height: 88px;
+  --header-scrolled: 64px;
   --content-gutter: clamp(20px, 4vw, 64px);
 }
 html {
-  scroll-behavior: smooth;
-  scroll-padding-top: calc(var(--header-height) + 24px);
+  scroll-behavior: auto;
+  scroll-padding-top: calc(var(--header-scrolled) + 24px);
 }
 body {
   color: #13426b;
@@ -89,18 +90,80 @@ select {
   text-align: left;
 }
 .menu {
+  height: calc(100dvh - var(--header-now));
   max-height: calc(100dvh - var(--header-now));
+  padding: 0;
+  transition: none;
   overscroll-behavior: contain;
   overflow-y: auto;
 }
+.menu :is(a, button):focus:not(:focus-visible) { outline: none; }
+.menu :is(a, button):focus-visible { outline: 2px solid currentColor; outline-offset: -4px; }
+.menu__body {
+  gap: 0;
+  padding-block: 16px max(32px, env(safe-area-inset-bottom));
+}
+.menu__nav-item {
+  border-bottom: 1px solid #d2dce4;
+}
 .menu__nav-link {
-  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  min-height: 76px;
+  padding: 20px 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  text-align: left;
+  text-decoration: none;
+}
+.menu__nav-link > span:first-child { min-width: 0; }
+.menu__nav-link > i { flex: 0 0 20px; font-size: 20px; }
+.menu__nav-link[aria-expanded="true"],
+.menu [aria-current="page"] { color: var(--sec-color); }
+.menu__nav-symbol {
+  position: relative;
+  flex: 0 0 20px;
+  height: 20px;
+}
+.menu__nav-symbol::before,
+.menu__nav-symbol::after {
+  content: "";
+  position: absolute;
+  inset: 9px 2px auto;
+  height: 1.5px;
+  background: currentColor;
+}
+.menu__nav-symbol::after {
+  transform: rotate(90deg);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+.menu__nav-link[aria-expanded="true"] .menu__nav-symbol::after { transform: rotate(0); }
+.menu__nav-dropdown {
+  gap: 0;
+  margin: 0 0 24px;
+  padding-left: 0;
+  border-left: 0;
 }
 .menu__dropdown-item {
-  display: block;
-  padding-block: 9px;
-  font-size: 16px;
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  padding-block: 10px;
+  font-size: clamp(17px, 2vw, 20px);
+  line-height: 1.4;
+  text-decoration: none;
 }
+body.zh .menu__nav-link { letter-spacing: 0; }
 body.show-menu {
   overflow: hidden;
 }
@@ -142,7 +205,6 @@ body.show-menu {
 }
 .content-section {
   margin-block: 64px;
-  scroll-margin-top: 150px;
 }
 .section-title {
   font-size: clamp(28px, 3vw, 44px);
@@ -885,34 +947,6 @@ body.zh .home-hero h1 {
 body.zh :is(.home-hero h1, .home-statement__words, .home-head h2, .home-index__title, .home-moments__head h2, .home-venue h2, .home-cta h2) {
   font-family: FSElliotPro, "PingFang TC", "Noto Sans TC", "Heiti TC", "Microsoft JhengHei", sans-serif;
 }
-@keyframes home-photo-in {
-  from { opacity: 0; transform: translateY(36px) scale(0.985); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes home-rise {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes home-float {
-  from { translate: 0 -4px; }
-  to { translate: 0 5px; }
-}
-@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
-  // Photos rise into place on load, then keep a slow drift; the wrapper is free for the pointer parallax.
-  .home-hero__photo img {
-    animation:
-      home-photo-in 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) both,
-      home-float 10s ease-in-out 1.4s infinite alternate;
-  }
-  .home-hero__photo--2 img { animation-delay: 0.1s, 1.5s; animation-duration: 1.4s, 12s; }
-  .home-hero__photo--3 img { animation-delay: 0.2s, 1.6s; animation-duration: 1.4s, 9s; }
-  .home-hero__photo--4 img { animation-delay: 0.3s, 1.7s; animation-duration: 1.4s, 13s; }
-  .home-hero__photo--5 img { animation-delay: 0.4s, 1.8s; animation-duration: 1.4s, 11s; }
-  .home-hero__inner > * { animation: home-rise 1.3s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-  .home-hero__details { animation-delay: 0.1s; }
-  .home-hero__inner > .go-btn { animation-delay: 0.2s; }
-}
-
 .home-statement {
   position: relative;
   padding-block: clamp(72px, 10vw, 160px) clamp(64px, 8vw, 120px);
@@ -928,12 +962,6 @@ body.zh :is(.home-hero h1, .home-statement__words, .home-head h2, .home-index__t
 .home-float--2 { right: 30vw; top: 38%; width: 10vw; aspect-ratio: 1; }
 .home-float--3 { right: 4vw; top: 40%; width: 16vw; aspect-ratio: 4 / 3; }
 .home-float--4 { left: 46vw; top: 6%; width: 7.5vw; aspect-ratio: 4 / 5; }
-@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
-  .home-float__drift img { animation: home-float 10s ease-in-out infinite alternate; }
-  .home-float--2 .home-float__drift img { animation-duration: 12s; animation-delay: -3s; }
-  .home-float--3 .home-float__drift img { animation-duration: 9s; animation-delay: -5s; }
-  .home-float--4 .home-float__drift img { animation-duration: 13s; animation-delay: -2s; }
-}
 .home-statement__eyebrow {
   margin-bottom: 1.4em;
   color: var(--sec-color);
@@ -1246,20 +1274,6 @@ body.zh .home-cta h2 { letter-spacing: 0.01em; line-height: 1.12; }
   .home-hero__details { font-size: 14px; }
 }
 
-// Scroll reveal: objects rise from below as they enter the viewport (see components/motion.js).
-// Elements are only hidden once JS has armed them, so nothing disappears without JS or with reduced motion.
-.reveal--armed {
-  opacity: 0;
-  transform: translateY(28px);
-}
-.reveal--shown {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity 1.1s cubic-bezier(0.22, 0.61, 0.36, 1) var(--reveal-delay, 0ms),
-    transform 1.3s cubic-bezier(0.22, 0.61, 0.36, 1) var(--reveal-delay, 0ms);
-}
-
 // ---- Inner pages: same language as the homepage (light lettering, hairlines, rising photos) ----
 .go-btn span { font-weight: 400; }
 .go-btn i::after { transition: background-color 0.35s ease; }
@@ -1305,18 +1319,6 @@ body.zh .inner-head__title {
 .inner-head__photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .inner-head__photo--1 { right: 0; top: 0; width: 9vw; aspect-ratio: 4 / 5; }
 .inner-head__photo--2 { right: 13vw; bottom: 28px; width: 9vw; aspect-ratio: 4 / 3; }
-@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
-  .inner-head__eyebrow,
-  .inner-head__title { animation: home-rise 1.3s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-  .inner-head__title { animation-delay: 0.08s; }
-  .inner-head__photo img {
-    animation:
-      home-photo-in 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) 0.2s both,
-      home-float 11s ease-in-out 1.6s infinite alternate;
-  }
-  .inner-head__photo--2 img { animation-delay: 0.35s, 1.75s; animation-duration: 1.4s, 13s; }
-}
-
 // Title on the left, content on the right, separated by a hairline.
 .content-section {
   position: relative;
@@ -1325,7 +1327,7 @@ body.zh .inner-head__title {
   gap: clamp(24px, 4vw, 72px);
   margin-block: 0;
   padding-block: clamp(40px, 5vw, 72px);
-  scroll-margin-top: calc(var(--header-height) + 72px);
+  scroll-margin-top: 0;
 }
 .content-section::before {
   content: "";
@@ -1352,7 +1354,6 @@ body.zh .inner-head__title {
 }
 body.zh .content-section .section-title { letter-spacing: 0.01em; }
 // Pages with the sticky sub-navigation keep section titles and anchors clear of it.
-.section-tabs ~ .content-section { scroll-margin-top: calc(var(--header-height) + 84px); }
 .section-tabs ~ .content-section .section-title { top: calc(var(--header-now) + 88px); }
 .content-section p { max-width: 62ch; }
 .lead-copy { font-size: clamp(18px, 1.6vw, 24px); line-height: 1.55; }
@@ -1554,7 +1555,7 @@ html.lenis { scroll-behavior: auto; }
 
 // Header: thin rule instead of a shadow; logo and bar shrink once the page scrolls.
 :root { --header-now: var(--header-height); --page-pad: max(var(--content-gutter), calc((100% - 1600px) / 2 + var(--content-gutter))); }
-body[data-at-top="false"] { --header-now: 64px; --brand-header-width: 88px; }
+body[data-at-top="false"] { --header-now: var(--header-scrolled); --brand-header-width: 88px; }
 .header, body[data-at-top="false"] .header {
   box-shadow: none;
   border-bottom: 1px solid var(--home-line);
@@ -1564,7 +1565,8 @@ body[data-at-top="false"] { --header-now: 64px; --brand-header-width: 88px; }
 .brand__logo { transition: width 0.45s cubic-bezier(0.22, 0.61, 0.36, 1); }
 @media (max-width: 767px) {
   .header__row { height: var(--header-now); }
-  body[data-at-top="false"] { --header-now: 58px; --brand-header-width: 80px; }
+  :root { --header-scrolled: 58px; }
+  body[data-at-top="false"] { --header-now: var(--header-scrolled); --brand-header-width: 80px; }
 }
 
 // Page-wide rules run edge to edge; only the content is inset.
@@ -1602,86 +1604,18 @@ body[data-at-top="false"] .header { border-bottom-color: var(--home-line); }
 @media (max-width: 899px) {
   .home-index__desc { display: block; }
 }
-// Slower idle drift and a shorter second-level menu.
-@keyframes home-float {
-  from { translate: 0 -9px; }
-  to { translate: 0 10px; }
-}
-@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
-  .home-hero__photo img { animation-duration: 1.4s, 16s; }
-  .home-hero__photo--2 img { animation-duration: 1.4s, 19s; }
-  .home-hero__photo--3 img { animation-duration: 1.4s, 14s; }
-  .home-hero__photo--4 img { animation-duration: 1.4s, 20s; }
-  .home-hero__photo--5 img { animation-duration: 1.4s, 17s; }
-  .home-float__drift img { animation-duration: 16s; }
-  .home-float--2 .home-float__drift img { animation-duration: 19s; }
-  .home-float--3 .home-float__drift img { animation-duration: 14s; }
-  .home-float--4 .home-float__drift img { animation-duration: 20s; }
-}
 .section-tabs { padding-block: 10px; }
 .section-tabs a { font-size: 15px; }
-.section-tabs ~ .content-section { scroll-margin-top: calc(var(--header-now) + 56px); }
+.section-tabs ~ .content-section { scroll-margin-top: 56px; }
 .section-tabs ~ .content-section .section-title { top: calc(var(--header-now) + 64px); }
 
 // Safari-safe photos: images fill an aspect-ratio box absolutely (no reflow while they load), and the
 // entrance, drift and pointer parallax each live on their own element so they never override one another.
-@keyframes home-drift {
-  from { transform: translate3d(0, -9px, 0); }
-  to { transform: translate3d(0, 10px, 0); }
-}
-.home-hero__enter { position: absolute; inset: 0; display: block; }
+.photo-enter { position: absolute; inset: 0; display: block; }
 .home-hero__photo img,
 .home-float__drift img,
 .inner-head__photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .home-float__drift { position: relative; }
-@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
-  .home-hero__photo--1 .home-hero__enter { animation: home-photo-in 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) 0s both; }
-  .home-hero__photo--1 img { animation: home-drift 16s ease-in-out 1.4s infinite alternate; }
-  .home-hero__photo--2 .home-hero__enter { animation: home-photo-in 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s both; }
-  .home-hero__photo--2 img { animation: home-drift 19s ease-in-out 1.5s infinite alternate; }
-  .home-hero__photo--3 .home-hero__enter { animation: home-photo-in 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) 0.2s both; }
-  .home-hero__photo--3 img { animation: home-drift 14s ease-in-out 1.5999999999999999s infinite alternate; }
-  .home-hero__photo--4 .home-hero__enter { animation: home-photo-in 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) 0.3s both; }
-  .home-hero__photo--4 img { animation: home-drift 20s ease-in-out 1.7s infinite alternate; }
-  .home-hero__photo--5 .home-hero__enter { animation: home-photo-in 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) 0.4s both; }
-  .home-hero__photo--5 img { animation: home-drift 17s ease-in-out 1.7999999999999998s infinite alternate; }
-  .home-float--1 .home-float__drift img { animation: home-drift 16s ease-in-out 0s infinite alternate; }
-  .home-float--2 .home-float__drift img { animation: home-drift 19s ease-in-out -2s infinite alternate; }
-  .home-float--3 .home-float__drift img { animation: home-drift 14s ease-in-out -4s infinite alternate; }
-  .home-float--4 .home-float__drift img { animation: home-drift 20s ease-in-out -6s infinite alternate; }
-}
-
-// Round 10: entrance waits for the decoded image; the idle drift is a slow, visible two-axis float.
-@keyframes home-drift {
-  0% { transform: translate3d(-8px, -10px, 0); }
-  50% { transform: translate3d(9px, 4px, 0); }
-  100% { transform: translate3d(-3px, 12px, 0); }
-}
-.home-hero__enter { opacity: 1; }
-.home-hero__enter.is-loading { opacity: 0; }
-.home-hero__enter.is-ready { opacity: 1; }
-@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
-  .home-hero__photo--1 .home-hero__enter { animation: none; }
-  .home-hero__photo--1 .home-hero__enter.is-ready { animation: home-photo-in 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) 0s both; }
-  .home-hero__photo--1 img { animation: home-drift 13s ease-in-out infinite alternate; }
-  .home-hero__photo--2 .home-hero__enter { animation: none; }
-  .home-hero__photo--2 .home-hero__enter.is-ready { animation: home-photo-in 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s both; }
-  .home-hero__photo--2 img { animation: home-drift 17s ease-in-out infinite alternate; }
-  .home-hero__photo--3 .home-hero__enter { animation: none; }
-  .home-hero__photo--3 .home-hero__enter.is-ready { animation: home-photo-in 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) 0.2s both; }
-  .home-hero__photo--3 img { animation: home-drift 15s ease-in-out infinite alternate; }
-  .home-hero__photo--4 .home-hero__enter { animation: none; }
-  .home-hero__photo--4 .home-hero__enter.is-ready { animation: home-photo-in 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) 0.3s both; }
-  .home-hero__photo--4 img { animation: home-drift 18s ease-in-out infinite alternate; }
-  .home-hero__photo--5 .home-hero__enter { animation: none; }
-  .home-hero__photo--5 .home-hero__enter.is-ready { animation: home-photo-in 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) 0.4s both; }
-  .home-hero__photo--5 img { animation: home-drift 14s ease-in-out infinite alternate; }
-  .home-float--1 .home-float__drift img { animation: home-drift 15s ease-in-out 0s infinite alternate; }
-  .home-float--2 .home-float__drift img { animation: home-drift 18s ease-in-out -2s infinite alternate; }
-  .home-float--3 .home-float__drift img { animation: home-drift 13s ease-in-out -4s infinite alternate; }
-  .home-float--4 .home-float__drift img { animation: home-drift 19s ease-in-out -6s infinite alternate; }
-}
-
 // Round 11: the programme photo stays in place instead of following the scroll.
 .home-index__stage { position: static; }
 
@@ -1811,11 +1745,3 @@ body.zh .home-float--4 { left: 50vw; }
   .programme-intro { grid-template-columns: minmax(0, 1fr); gap: 20px; }
 }
 .header__lang-link { min-width: 44px; min-height: 44px; }
-.reveal:focus-within { opacity: 1; transform: none; }
-[data-motion-active="false"] :is(.home-hero__photo img, .home-float__drift img, .inner-head__photo img) {
-  animation-play-state: paused;
-}
-@media (prefers-reduced-motion: reduce), (hover: none), (pointer: coarse) {
-  .reveal--armed { opacity: 1; transform: none; }
-  .home-hero__photo, .home-float__drift, .inner-head__photo { will-change: auto; }
-}

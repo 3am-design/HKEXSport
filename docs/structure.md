@@ -135,3 +135,14 @@ Chinese display lettering falls back to PingFang TC / Noto Sans TC because FS El
 - The photo strip is a plain endless loop: no pause, edge cursor or arrows, no user control.
 - Pointer parallax on the hero, statement and inner-page photos is roughly halved again.
 - Language toggle reads "繁中" / "EN" as plain text without a border box. Hairline above the "The event" row removed; the What's on list now aligns with its photo and has equal-width rules.
+
+### Route scrolling and shared motion — 3 October
+
+- `usePageScroll.js` cancels Lenis inertia before navigation, resets a new route before paint, and synchronises the controller with the new document height. Browser back/forward retains native scroll restoration. Same-page section links keep their anchor behaviour; header padding and section margins are counted once.
+- `motion-2026.scss` is the single entry/reveal/drift stylesheet: 720 ms reveals, 900 ms intros, 80 ms stagger, and the same ease-out curve. The superseded animation blocks in `preview-2026.scss` have been removed.
+- `Reveal` and `RevealGroup` enhance visible HTML. Section rules/backgrounds and sticky headings stay in place; copy, schedule rows, workshop cards and gallery photos enter independently. Card delays follow their visual row and are capped at three steps. Reveals run once and finish immediately on focus or an interrupted visibility/preference change. Filters and dialogs stay outside entrance animation.
+- `IntroPhoto` waits for image decoding and uses separate layers for entry, drift and pointer movement on both home and inner pages. Restored/deep-linked content skips entry; reduced motion and touch keep content static. Decorative motion pauses offscreen. The photo strip pauses for pointer/focus and remains swipeable on touch.
+
+### Mobile navigation — 3 October
+
+The mobile menu opens with five first-level entries. Categories are disclosure buttons: only one submenu opens at a time, and closing/reopening resets to the first level. Category overview pages remain available within their submenus. Main labels use 28–40 px Regular type; secondary links use 17–20 px with a 46 px minimum tap height and consistent spacing. Both levels share the same left edge, with no vertical rule or submenu indentation. The menu occupies the space below the header and scrolls independently on short screens. Keyboard focus, Escape, child links, anchors and the 1100/1101 px desktop switch retain their navigation behaviour.

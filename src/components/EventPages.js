@@ -2,9 +2,10 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useGlobalContext } from "@/app/GlobalContext";
+import { IntroPhoto } from "@/components/IntroPhoto";
 import InnerHead from "@/app/common/InnerHead";
 import { asset } from "@/lib/assets";
-import { Reveal, usePointerParallax, observeMotion } from "@/components/motion";
+import { Reveal, RevealGroup, usePointerParallax, observeMotion } from "@/components/motion";
 import {
   event,
   photography,
@@ -32,18 +33,18 @@ export function ArrowLink({ href, children }) {
 }
 export function Section({ id, title, children }) {
   return (
-    <Reveal as="section" id={id} className="content-section">
-      <h2 className="section-title">{title}</h2>
-      <div className="content-section__body">{children}</div>
-    </Reveal>
+    <section id={id} className="content-section">
+      <h2 className="section-title"><Reveal as="span">{title}</Reveal></h2>
+      <RevealGroup className="content-section__body">{children}</RevealGroup>
+    </section>
   );
 }
 function Cards({ items }) {
   const lang = useLang();
   return (
-    <div className="card-grid container">
-      {items.map((item, i) => (
-        <Reveal as="div" delay={i * 90} key={item.link}>
+    <RevealGroup className="card-grid container">
+      {items.map((item) => (
+        <div key={item.link}>
           <Link className="card-grid__item" href={item.link}>
             <span className="card-grid__img">
               <img src={asset(item.img)} alt="" loading="lazy" />
@@ -52,9 +53,9 @@ function Cards({ items }) {
             <span className="card-grid__desc">{item.description[lang]}</span>
             <i className="bi bi-arrow-right" aria-hidden="true" />
           </Link>
-        </Reveal>
+        </div>
       ))}
-    </div>
+    </RevealGroup>
   );
 }
 function Countdown() {
@@ -109,33 +110,6 @@ const heroPhotos = [
 // How far (px at the section edge) each photo travels with the pointer; negative moves against it.
 const heroDepths = [7, -5, 10, -8, 6, -6];
 const statementDepths = [6, -5, 8, -6];
-// Fades in only once the image has decoded, so nothing pops in half-way through the entrance animation.
-function HeroPhoto({ src, position, priority }) {
-  const ref = useRef(null);
-  const [status, setStatus] = useState("static");
-  useEffect(() => {
-    const img = ref.current;
-    if (!img) return undefined;
-    let mounted = true;
-    if (!img.complete) setStatus("loading");
-    img.decode().catch(() => {}).then(() => { if (mounted) setStatus("ready"); });
-    return () => { mounted = false; };
-  }, []);
-  return (
-    <span className={`home-hero__enter is-${status}`}>
-      <img
-        ref={ref}
-        src={asset(src)}
-        alt=""
-        width="509"
-        height="339"
-        style={{ objectPosition: position }}
-        fetchPriority={priority ? "high" : undefined}
-        loading={priority ? undefined : "lazy"}
-      />
-    </span>
-  );
-}
 function HomeHero() {
   const lang = useLang();
   const photosRef = useRef(null);
@@ -149,12 +123,12 @@ function HomeHero() {
             className={`home-hero__photo home-hero__photo--${i + 1}`}
             data-depth={heroDepths[i]}
           >
-            <HeroPhoto src={photo.src} position={photo.position} priority={i < 3} />
+            <IntroPhoto src={photo.src} position={photo.position} priority={i < 3} step={2 + i} />
           </span>
         ))}
       </div>
       <div className="home-hero__inner container">
-        <h1 id="event-title">
+        <Reveal as="h1" intro id="event-title">
           <span className="home-hero__name">
             {lang === "en" ? (
               <>
@@ -165,14 +139,14 @@ function HomeHero() {
             )}
           </span>
           <span className="home-hero__year">2026</span>
-        </h1>
-        <p className="home-hero__details">
+        </Reveal>
+        <Reveal as="p" intro step={1} className="home-hero__details">
           <time dateTime="2026-12-12">{event.date[lang]}</time>
           <span aria-hidden="true">/</span>
           <span>{event.time[lang]}</span>
           <span aria-hidden="true">/</span>
           <span>{event.venue[lang]}</span>
-        </p>
+        </Reveal>
         <ArrowLink href="/event-overview/">
           {lang === "en" ? "Explore the day" : "探索活動"}
         </ArrowLink>
@@ -201,7 +175,7 @@ function HomeStatement() {
         {statementPhotos.map((photo, i) => (
           <Reveal
             as="span"
-            delay={i * 100}
+            step={i}
             key={photo.src}
             className={`home-float home-float--${i + 1}`}
           >
@@ -224,7 +198,7 @@ function HomeStatement() {
         </Reveal>
         <h2 className="home-statement__words">
           {words.map((word, i) => (
-            <Reveal as="span" delay={i * 100} key={word}>
+            <Reveal as="span" step={i} key={word}>
               {word}
             </Reveal>
           ))}
@@ -275,7 +249,6 @@ function HomeIndex() {
             {highlights.map((item, i) => (
               <Reveal
                 as="li"
-                delay={i * 70}
                 key={item.link}
                 className={i === active ? "is-active" : undefined}
               >
@@ -366,7 +339,7 @@ function HomeMoments() {
         </h2>
         <ArrowLink href="/gallery/">{lang === "en" ? "Photo gallery" : "相片集"}</ArrowLink>
       </Reveal>
-      <Reveal delay={120} className="home-moments__viewport">
+      <Reveal step={1} className="home-moments__viewport">
         <ul className="home-moments__track" ref={trackRef} aria-hidden="true">
           {[0, 1, 2].flatMap((copy) =>
             homeMoments.map((moment) => (
@@ -395,7 +368,7 @@ function HomeVenue() {
             <p className="home-venue__eyebrow">{lang === "en" ? "The venue" : "活動場地"}</p>
             <h2 id="home-venue-title">{event.venue[lang]}</h2>
           </Reveal>
-          <Reveal className="home-venue__info" delay={120}>
+          <Reveal className="home-venue__info" step={1}>
             <p className="home-venue__lead">
               {lang === "en"
                 ? "The 2026 event brings track, field and family activities together at Kai Tak Youth Sports Ground."
@@ -444,7 +417,7 @@ function HomeClosing() {
         <Reveal as="h2" id="home-cta-title">
           {lang === "en" ? "See you on 12\u00a0December." : "12 月 12 日，運動場見！"}
         </Reveal>
-        <Reveal className="home-cta__row" delay={140}>
+        <Reveal className="home-cta__row" step={1}>
           <Countdown />
           <ArrowLink href="/event-overview/">
             {lang === "en" ? "Explore the day" : "探索活動"}
@@ -547,7 +520,7 @@ export function SchedulePage() {
         photos={headPhotos.schedule}
       />
       <Section title={event.date[lang]}>
-        <div className="schedule-list">
+        <div className="schedule-list" data-reveal-group>
           {schedule.map((row) => (
             <div className="schedule-row" key={row.title.en}>
               <div className="schedule-time">
@@ -579,7 +552,7 @@ export function VenuePage() {
         title={lang === "en" ? "About the Venue" : "活動場地"}
         photos={headPhotos.venue}
       />
-      <div className="venue-map container">
+      <Reveal className="venue-map container">
         <a
           href={asset(`/images/about/Event-Map${lang === "en" ? "" : "-tc"}.jpg`)}
           target="_blank"
@@ -592,7 +565,7 @@ export function VenuePage() {
             fetchPriority="high"
           />
         </a>
-      </div>
+      </Reveal>
       <Section title={event.venue[lang]}>
         <p className="lead-copy">
           {lang === "en"
@@ -680,7 +653,7 @@ export function CompetitionsPage() {
             <img src={asset(group.image)} alt="" loading="lazy" />
             <p className="lead-copy">{group.description[lang]}</p>
           </div>
-          <div className="competition-grid">
+          <div className="competition-grid" data-reveal-group>
             {group.items.map((item) => (
               <CompetitionDetails key={item.id} item={item} lang={lang} />
             ))}
@@ -766,7 +739,7 @@ export function WorkshopsPage() {
             </div>
           </div>
         </div>
-        <div className="workshop-grid">
+        <div className="workshop-grid" data-reveal-group>
           {workshopOptions.map((item) => (
             <article className="programme-card workshop-card" key={item.id}>
               <p className="programme-category">{item.focus[lang]}</p>
@@ -796,7 +769,7 @@ export function WorkshopsPage() {
         </ul>
       </Section>
       <Section id="workshop-sessions" title={lang === "en" ? "Workshop Sessions" : "工作坊場次"}>
-        <div className="workshop-session-list">
+        <div className="workshop-session-list" data-reveal-group>
           {workshopSessionGroups.map((group) => (
             <div className="workshop-session-row" key={group.id}>
               <div>

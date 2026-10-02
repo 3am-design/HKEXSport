@@ -1,6 +1,7 @@
 import "@/app/assets/global.scss";
 import "@/app/assets/common.scss";
 import "@/app/assets/preview-2026.scss";
+import "@/app/assets/motion-2026.scss";
 import "bootstrap-icons/font/bootstrap-icons.scss";
 import { GlobalProvider } from "@/app/GlobalContext";
 export const metadata = {

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export const MOTION_QUERY = "(prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)";
 
@@ -28,46 +28,93 @@ export function observeMotion(surface, onChange) {
   };
 }
 
-// Content starts visible; only offscreen content with supported motion is armed.
-export function Reveal({ as: Tag = "div", delay = 0, className = "", style, children, onFocusCapture, ...rest }) {
-  const ref = useRef(null);
-  const [state, setState] = useState("static");
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof IntersectionObserver === "undefined") return undefined;
-    const preference = window.matchMedia(MOTION_QUERY);
-    let observer;
-    let revealed = false;
-    const update = () => {
-      observer?.disconnect();
-      if (!preference.matches || revealed || el.getBoundingClientRect().top < window.innerHeight * 0.9) {
-        setState("static");
-        return;
+// Content is visible in HTML. Only this controller can arm a reveal; every item
+// runs once, with peer delays calculated by visual row rather than list length.
+function observeReveals(elements, completed, step) {
+  const preference = window.matchMedia(MOTION_QUERY);
+  let observer;
+  const finish = (el) => {
+    el.dataset.reveal = "complete";
+    completed.add(el);
+    observer?.unobserve(el);
+  };
+  const show = (el) => {
+    if (completed.has(el)) return;
+    el.dataset.reveal = "shown";
+    completed.add(el);
+    observer?.unobserve(el);
+  };
+  const settle = (event) => {
+    if (event.animationName === "event-rise") finish(event.currentTarget);
+  };
+  const focus = (event) => finish(event.currentTarget);
+  const update = () => {
+    observer?.disconnect();
+    if (!preference.matches || typeof IntersectionObserver === "undefined" || document.hidden) {
+      elements.forEach(finish);
+      return;
+    }
+    observer = new IntersectionObserver((entries) => {
+      entries.filter((entry) => entry.isIntersecting).forEach((entry) => show(entry.target));
+    }, { rootMargin: "0px 0px -6% 0px" });
+    const rows = new Map();
+    for (const el of elements) {
+      if (completed.has(el)) continue;
+      const rect = el.getBoundingClientRect();
+      const row = rows.get(el.parentElement);
+      const index = row && Math.abs(row.top - rect.top) < 32 ? row.index + 1 : 0;
+      rows.set(el.parentElement, { top: rect.top, index });
+      el.style.setProperty("--motion-step", String(step ?? Math.min(index, 3)));
+      // Keep restored/deep-linked content stable, including after a language change.
+      if (rect.top < window.innerHeight * 0.94 && (window.scrollY > 30 || document.documentElement.dataset.navigation === "history")) {
+        finish(el);
+      } else if (rect.top < window.innerHeight * 0.94) {
+        show(el);
+      } else {
+        el.dataset.reveal = "armed";
+        observer.observe(el);
       }
-      observer = new IntersectionObserver(([entry]) => {
-        if (!entry.isIntersecting) return;
-        revealed = true;
-        setState("shown");
-        observer.disconnect();
-      }, { rootMargin: "0px 0px -8% 0px" });
-      observer.observe(el);
-      setState("armed");
-    };
-    update();
-    preference.addEventListener("change", update);
-    return () => { observer?.disconnect(); preference.removeEventListener("change", update); };
-  }, []);
-  return (
-    <Tag
-      ref={ref}
-      className={`reveal reveal--${state}${className ? ` ${className}` : ""}`}
-      style={{ ...style, "--reveal-delay": `${delay}ms` }}
-      onFocusCapture={(event) => { setState("static"); onFocusCapture?.(event); }}
-      {...rest}
-    >
-      {children}
-    </Tag>
-  );
+    }
+  };
+  for (const el of elements) {
+    el.addEventListener("animationend", settle);
+    el.addEventListener("focusin", focus);
+  }
+  update();
+  preference.addEventListener("change", update);
+  document.addEventListener("visibilitychange", update);
+  return () => {
+    observer?.disconnect();
+    preference.removeEventListener("change", update);
+    document.removeEventListener("visibilitychange", update);
+    for (const el of elements) {
+      el.removeEventListener("animationend", settle);
+      el.removeEventListener("focusin", focus);
+      // A group can rerender (filters, language) before it enters: leave no hidden orphan.
+      if (el.dataset.reveal === "armed") delete el.dataset.reveal;
+    }
+  };
+}
+
+export function Reveal({ as: Tag = "div", step = 0, intro = false, children, ...rest }) {
+  const ref = useRef(null);
+  const completed = useRef(new WeakSet());
+  useEffect(() => observeReveals([ref.current], completed.current, step), [step]);
+  return <Tag ref={ref} data-motion-kind={intro ? "intro" : "reveal"} {...rest}>{children}</Tag>;
+}
+
+// Sections keep their rules/backgrounds and sticky title still. A marked group
+// reveals its rows/cards independently; live controls and dialogs are excluded.
+export function RevealGroup({ as: Tag = "div", children, ...rest }) {
+  const ref = useRef(null);
+  const completed = useRef(new WeakSet());
+  useEffect(() => {
+    const elements = [...ref.current.querySelectorAll(
+      ":scope > :not([data-reveal-group], [data-reveal-ignore], dialog), :scope > [data-reveal-group] > *",
+    )];
+    return observeReveals(elements, completed.current);
+  }, [children]);
+  return <Tag ref={ref} {...rest}>{children}</Tag>;
 }
 
 // Depth is in px at the surface edge; negative values move the other way.

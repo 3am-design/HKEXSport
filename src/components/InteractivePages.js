@@ -28,7 +28,7 @@ export function GalleryPage() {
       <InnerHead title={lang === "en" ? "Photo Gallery" : "相片集"} />
       <Section title={lang === "en" ? "Shared moments." : "一起留下精彩瞬間。"}>
         <div
-          className="filter-tags"
+          className="filter-tags" data-reveal-ignore
           role="group"
           aria-label={
             lang === "en" ? "Filter photos by one tag" : "按單一分類篩選相片"
@@ -44,12 +44,12 @@ export function GalleryPage() {
             </button>
           ))}
         </div>
-        <p className="result-count" aria-live="polite">
+        <p className="result-count" data-reveal-ignore aria-live="polite">
           {lang === "en"
             ? `${photos.length} photos`
             : `${photos.length} 張相片`}
         </p>
-        <div className="gallery-grid">
+        <div className="gallery-grid" data-reveal-group>
           {photos.map((photo) => (
             <button
               className="gallery-photo"
@@ -113,7 +113,7 @@ export function WorkshopStatusPage() {
             : "排隊及攞籌狀態，一目了然。"
         }
       >
-        <div className="queue-grid" aria-live="polite">
+        <div className="queue-grid" data-reveal-group aria-live="polite">
           {workshopQueues
             .map((item) => (
               <article className="queue-card" key={item.id}>
@@ -182,7 +182,7 @@ export function ResultsPage() {
           lang === "en" ? "Every round. Every result." : "每個賽段，每項成績。"
         }
       >
-        <div className="results-filters">
+        <div className="results-filters" data-reveal-ignore>
           <label className="select-field">
             {lang === "en" ? "Competition" : "比賽項目"}
             <select
@@ -237,7 +237,7 @@ export function ResultsPage() {
             </select>
           </label>
         </div>
-        <div className="results-heading" aria-live="polite">
+        <div className="results-heading" data-reveal-ignore aria-live="polite">
           <h3>
             {competition.title[lang]} · {category.title[lang]} ·{" "}
             {round.title[lang]}

@@ -1,0 +1,48 @@
+// One motion vocabulary for page entries, scroll reveals and decorative photos.
+:root {
+  --motion-fast: 220ms;
+  --motion-reveal: 720ms;
+  --motion-intro: 900ms;
+  --motion-stagger: 80ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-rise: 20px;
+}
+.section-title > span { display: block; }
+@keyframes event-rise {
+  from { opacity: 0; transform: translate3d(0, var(--motion-rise), 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes event-drift {
+  0% { transform: translate3d(-6px, -8px, 0); }
+  50% { transform: translate3d(7px, 3px, 0); }
+  100% { transform: translate3d(-2px, 9px, 0); }
+}
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  [data-reveal="armed"] { opacity: 0; transform: translate3d(0, var(--motion-rise), 0); }
+  [data-reveal="shown"] {
+    animation: event-rise var(--motion-reveal) var(--motion-ease) calc(var(--motion-step, 0) * var(--motion-stagger)) both;
+  }
+  [data-motion-kind="intro"] { --motion-reveal: var(--motion-intro); }
+  .photo-enter.is-loading { opacity: 0; }
+  .photo-enter.is-ready {
+    --motion-rise: 24px;
+    animation: event-rise var(--motion-intro) var(--motion-ease) calc(var(--motion-step, 2) * var(--motion-stagger)) both;
+  }
+  :is(.home-hero__photo, .home-float__drift, .inner-head__photo) img {
+    animation: event-drift var(--drift-duration, 16s) ease-in-out var(--drift-phase, 0s) infinite alternate;
+    animation-play-state: paused;
+  }
+  [data-motion-active="true"] :is(.home-hero__photo, .home-float__drift, .inner-head__photo) img {
+    animation-play-state: running;
+  }
+  .home-hero__photo--2, .home-float--2, .inner-head__photo--2 { --drift-duration: 18s; --drift-phase: -2s; }
+  .home-hero__photo--3, .home-float--3 { --drift-duration: 15s; --drift-phase: -4s; }
+  .home-hero__photo--4, .home-float--4 { --drift-duration: 19s; --drift-phase: -6s; }
+  .home-hero__photo--5 { --drift-duration: 17s; --drift-phase: -3s; }
+}
+// Focus or an interrupted animation must never leave an operable control hidden.
+[data-reveal]:focus-within { animation: none; opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce), (hover: none), (pointer: coarse) {
+  [data-reveal], .photo-enter { animation: none; opacity: 1; transform: none; }
+  .home-hero__photo, .home-float__drift, .inner-head__photo { will-change: auto; }
+}

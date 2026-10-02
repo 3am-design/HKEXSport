@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useGlobalContext } from "@/app/GlobalContext";
 import { asset } from "@/lib/assets";
@@ -22,10 +22,14 @@ export default function Header() {
   const headerRef = useRef(null);
   const menuRef = useRef(null);
   const toggleRef = useRef(null);
+  const [expanded, setExpanded] = useState(null);
   const lang = state.lang;
-  const close = () =>
+  const close = () => {
+    setExpanded(null);
     setState((previous) => ({ ...previous, showMenu: false }));
+  };
   useEffect(() => {
+    setExpanded(null);
     setState((previous) => ({ ...previous, showMenu: false }));
   }, [pathname, setState]);
   useEffect(() => {
@@ -33,7 +37,8 @@ export default function Header() {
     const update = () => {
       if (!desktop.matches) return;
       const focusedHref = menuRef.current?.contains(document.activeElement)
-        ? document.activeElement.getAttribute("href") : null;
+        ? document.activeElement.getAttribute("href") ?? document.activeElement.dataset.navHref : null;
+      setExpanded(null);
       setState((previous) => previous.showMenu ? { ...previous, showMenu: false } : previous);
       if (focusedHref) {
         const links = [...headerRef.current.querySelectorAll(".header__nav a")];
@@ -45,8 +50,12 @@ export default function Header() {
     return () => desktop.removeEventListener("change", update);
   }, [setState]);
   useEffect(() => {
-    if (!state.showMenu) return undefined;
-    const frame = requestAnimationFrame(() => menuRef.current?.querySelector("a")?.focus());
+    if (!state.showMenu) {
+      setExpanded(null);
+      return undefined;
+    }
+    menuRef.current.scrollTop = 0;
+    const frame = requestAnimationFrame(() => menuRef.current?.querySelector(".menu__nav-link")?.focus({ preventScroll: true }));
     const keydown = (event) => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -150,31 +159,54 @@ export default function Header() {
       >
         <div className="container">
           <div className="menu__body">
-            {navigation.map((item) => (
-              <div className="menu__nav-item" key={item.href}>
-                <Link
-                  className="menu__nav-link"
-                  href={item.href}
-                  onClick={close}
-                >
-                  {item.label[lang]}
-                </Link>
-                {item.child && (
-                  <div className="menu__nav-dropdown">
-                    {item.child.map((child) => (
-                      <Link
-                        className="menu__dropdown-item"
-                        key={child.href}
-                        href={child.href}
-                        onClick={close}
-                      >
-                        {child.label[lang]}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+            {navigation.map((item, index) => {
+              const isExpanded = expanded === item.href;
+              const submenuId = `mobile-submenu-${index}`;
+              return (
+                <div className="menu__nav-item" key={item.href}>
+                  {item.child ? (
+                    <button
+                      type="button"
+                      className="menu__nav-link"
+                      data-nav-href={asset(item.href)}
+                      aria-expanded={isExpanded}
+                      aria-controls={submenuId}
+                      onClick={() => setExpanded(isExpanded ? null : item.href)}
+                    >
+                      <span>{item.label[lang]}</span>
+                      <span className="menu__nav-symbol" aria-hidden="true" />
+                    </button>
+                  ) : (
+                    <Link className="menu__nav-link" href={item.href} onClick={close}
+                      aria-current={pathname === item.href ? "page" : undefined}>
+                      <span>{item.label[lang]}</span>
+                      <i className="bi bi-arrow-right" aria-hidden="true" />
+                    </Link>
+                  )}
+                  {item.child && (
+                    <div id={submenuId} className="menu__nav-dropdown" hidden={!isExpanded}>
+                      {!item.child.some((child) => child.href === item.href) && (
+                        <Link className="menu__dropdown-item" href={item.href} onClick={close}
+                          aria-current={pathname === item.href ? "page" : undefined}>
+                          {lang === "en" ? "Overview" : "總覽"}
+                        </Link>
+                      )}
+                      {item.child.map((child) => (
+                        <Link
+                          className="menu__dropdown-item"
+                          key={child.href}
+                          href={child.href}
+                          onClick={close}
+                          aria-current={pathname === child.href ? "page" : undefined}
+                        >
+                          {child.label[lang]}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </nav>
